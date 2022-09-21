@@ -124,3 +124,8 @@ fn main() -> Result<()> {
 
   Ok(())
 }
+
+/// Creates a Steam RSS URL from a given AppID.
+fn appid_to_rss_url(appid: usize) -> String {
+  format!("https://steamcommunity.com/games/{appid}/rss/")
+}
