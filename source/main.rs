@@ -81,17 +81,24 @@ fn main() -> Result<()> {
       .with_style(ProgressStyle::with_template("Verifying {pos}/{len} {bar}")?);
 
     for potential_feed in potential_feeds {
-      let response = ureq_agent.get(&potential_feed.url).call()?;
-      if response.content_type() == "text/xml" {
-        let body = response.into_string()?;
-        let title_start = body.find("<title>").unwrap() + 7;
-        let title_end = body.find("</title>").unwrap();
-        feeds_to_output.push(Feed {
-          text: Some(body[title_start..title_end].to_string()),
-          ..potential_feed
-        });
-      }
+      let potential_feed = if potential_feed.option == FeedOption::AppID {
+        let response = ureq_agent.get(&potential_feed.url).call()?;
+        if response.content_type() == "text/xml" {
+          let body = response.into_string()?;
+          let title_start = body.find("<title>").unwrap() + 7;
+          let title_end = body.find("</title>").unwrap();
+          Feed {
+            text: Some(body[title_start..title_end].to_string()),
+            ..potential_feed
+          }
+        } else {
+          continue;
+        }
+      } else {
+        continue;
+      };
 
+      feeds_to_output.push(potential_feed);
       sleep(timeout);
       progress.inc(1);
     }
