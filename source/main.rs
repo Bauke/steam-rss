@@ -13,6 +13,7 @@ use {
   clap::Parser,
   color_eyre::{install, Result},
   indicatif::{ProgressBar, ProgressStyle},
+  regex::Regex,
 };
 
 /// CLI arguments struct using [`clap`]'s Derive API.
@@ -34,6 +35,10 @@ pub struct Args {
   /// Verify potential feeds by downloading them and checking if they return XML.
   #[clap(short, long)]
   pub verify: bool,
+
+  /// A game's store URL, can be used multiple times.
+  #[clap(long)]
+  pub url: Vec<String>,
 }
 
 /// A simple feed struct.
@@ -54,6 +59,9 @@ pub struct Feed {
 pub enum FeedOption {
   /// `-a, --appid <APPID>` was used.
   AppID,
+
+  /// `--url <URL>` was used.
+  Url,
 }
 
 fn main() -> Result<()> {
@@ -68,12 +76,29 @@ fn main() -> Result<()> {
   let mut potential_feeds = vec![];
   let mut feeds_to_output = vec![];
 
+  let store_url_regex =
+    Regex::new(r"(?i)^https?://store.steampowered.com/app/(?P<appid>\d+)")?;
+
   for appid in args.appid {
     potential_feeds.push(Feed {
       option: FeedOption::AppID,
       text: Some(format!("Steam AppID {appid}")),
-      url: format!("https://steamcommunity.com/games/{appid}/rss/"),
+      url: appid_to_rss_url(appid),
     });
+  }
+
+  for url in args.url {
+    let appid = store_url_regex
+      .captures(&url)
+      .and_then(|captures| captures.name("appid"))
+      .and_then(|appid_match| appid_match.as_str().parse::<usize>().ok());
+    if let Some(appid) = appid {
+      potential_feeds.push(Feed {
+        option: FeedOption::Url,
+        text: Some(format!("Steam AppID {appid}")),
+        url: appid_to_rss_url(appid),
+      });
+    }
   }
 
   if args.verify {
@@ -81,7 +106,9 @@ fn main() -> Result<()> {
       .with_style(ProgressStyle::with_template("Verifying {pos}/{len} {bar}")?);
 
     for potential_feed in potential_feeds {
-      let potential_feed = if potential_feed.option == FeedOption::AppID {
+      let potential_feed = if [FeedOption::AppID, FeedOption::Url]
+        .contains(&potential_feed.option)
+      {
         let response = ureq_agent.get(&potential_feed.url).call()?;
         if response.content_type() == "text/xml" {
           let body = response.into_string()?;
