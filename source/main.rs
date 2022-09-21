@@ -89,6 +89,8 @@ fn main() -> Result<()> {
   }
 
   let mut opml_document = opml::OPML::default();
+  opml_document.head = None;
+
   for feed in feeds_to_output {
     if args.opml {
       opml_document
