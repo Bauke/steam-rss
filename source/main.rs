@@ -36,6 +36,16 @@ pub struct Args {
   pub verify: bool,
 }
 
+/// A simple feed struct.
+#[derive(Debug)]
+pub struct Feed {
+  /// The text to use for the feed in the OPML output.
+  pub text: Option<String>,
+
+  /// The URL of the feed.
+  pub url: String,
+}
+
 fn main() -> Result<()> {
   install()?;
 
@@ -49,8 +59,10 @@ fn main() -> Result<()> {
   let mut feeds_to_output = vec![];
 
   for appid in args.appid {
-    potential_feeds
-      .push(format!("https://steamcommunity.com/games/{appid}/rss/"));
+    potential_feeds.push(Feed {
+      text: Some(format!("Steam AppID {appid}")),
+      url: format!("https://steamcommunity.com/games/{appid}/rss/"),
+    });
   }
 
   if args.verify {
@@ -58,7 +70,7 @@ fn main() -> Result<()> {
       .with_style(ProgressStyle::with_template("Verifying {pos}/{len} {bar}")?);
 
     for potential_feed in potential_feeds {
-      let response = ureq_agent.get(&potential_feed).call()?;
+      let response = ureq_agent.get(&potential_feed.url).call()?;
       if response.content_type() == "text/xml" {
         feeds_to_output.push(potential_feed);
       }
@@ -73,9 +85,10 @@ fn main() -> Result<()> {
   let mut opml_document = opml::OPML::default();
   for feed in feeds_to_output {
     if args.opml {
-      opml_document.add_feed(&feed, &feed);
+      opml_document
+        .add_feed(&feed.text.unwrap_or_else(|| feed.url.clone()), &feed.url);
     } else {
-      println!("{feed}");
+      println!("{}", feed.url);
     }
   }
 
