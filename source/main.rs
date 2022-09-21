@@ -55,7 +55,7 @@ pub struct Feed {
 }
 
 /// An enum for [`Feed`]s for which option was used in the CLI.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum FeedOption {
   /// `-a, --appid <APPID>` was used.
   AppID,
@@ -133,8 +133,10 @@ fn main() -> Result<()> {
     feeds_to_output = potential_feeds;
   }
 
-  let mut opml_document = opml::OPML::default();
-  opml_document.head = None;
+  let mut opml_document = opml::OPML {
+    head: None,
+    ..Default::default()
+  };
 
   for feed in feeds_to_output {
     if args.opml {
