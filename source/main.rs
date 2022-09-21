@@ -23,6 +23,10 @@ pub struct Args {
   #[clap(short, long)]
   pub appid: Vec<usize>,
 
+  /// Output the feeds as OPML.
+  #[clap(long)]
+  pub opml: bool,
+
   /// The time in milliseconds to sleep between HTTP requests.
   #[clap(short, long, default_value = "250")]
   pub timeout: u64,
@@ -66,8 +70,17 @@ fn main() -> Result<()> {
     feeds_to_output = potential_feeds;
   }
 
+  let mut opml_document = opml::OPML::default();
   for feed in feeds_to_output {
-    println!("{feed}");
+    if args.opml {
+      opml_document.add_feed(&feed, &feed);
+    } else {
+      println!("{feed}");
+    }
+  }
+
+  if args.opml {
+    println!("{}", opml_document.to_string()?);
   }
 
   Ok(())
