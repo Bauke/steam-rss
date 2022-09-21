@@ -39,11 +39,21 @@ pub struct Args {
 /// A simple feed struct.
 #[derive(Debug)]
 pub struct Feed {
+  /// The CLI option that was used for this feed.
+  pub option: FeedOption,
+
   /// The text to use for the feed in the OPML output.
   pub text: Option<String>,
 
   /// The URL of the feed.
   pub url: String,
+}
+
+/// An enum for [`Feed`]s for which option was used in the CLI.
+#[derive(Debug, PartialEq)]
+pub enum FeedOption {
+  /// `-a, --appid <APPID>` was used.
+  AppID,
 }
 
 fn main() -> Result<()> {
@@ -60,6 +70,7 @@ fn main() -> Result<()> {
 
   for appid in args.appid {
     potential_feeds.push(Feed {
+      option: FeedOption::AppID,
       text: Some(format!("Steam AppID {appid}")),
       url: format!("https://steamcommunity.com/games/{appid}/rss/"),
     });
@@ -77,7 +88,7 @@ fn main() -> Result<()> {
         let title_end = body.find("</title>").unwrap();
         feeds_to_output.push(Feed {
           text: Some(body[title_start..title_end].to_string()),
-          url: potential_feed.url,
+          ..potential_feed
         });
       }
 
