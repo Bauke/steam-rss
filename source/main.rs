@@ -72,7 +72,13 @@ fn main() -> Result<()> {
     for potential_feed in potential_feeds {
       let response = ureq_agent.get(&potential_feed.url).call()?;
       if response.content_type() == "text/xml" {
-        feeds_to_output.push(potential_feed);
+        let body = response.into_string()?;
+        let title_start = body.find("<title>").unwrap() + 7;
+        let title_end = body.find("</title>").unwrap();
+        feeds_to_output.push(Feed {
+          text: Some(body[title_start..title_end].to_string()),
+          url: potential_feed.url,
+        });
       }
 
       sleep(timeout);
