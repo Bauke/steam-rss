@@ -44,24 +44,11 @@ pub struct Args {
 /// A simple feed struct.
 #[derive(Debug)]
 pub struct Feed {
-  /// The CLI option that was used for this feed.
-  pub option: FeedOption,
-
   /// The text to use for the feed in the OPML output.
   pub text: Option<String>,
 
   /// The URL of the feed.
   pub url: String,
-}
-
-/// An enum for [`Feed`]s for which option was used in the CLI.
-#[derive(Debug, Eq, PartialEq)]
-pub enum FeedOption {
-  /// `-a, --appid <APPID>` was used.
-  AppID,
-
-  /// `--url <URL>` was used.
-  Url,
 }
 
 fn main() -> Result<()> {
@@ -81,7 +68,6 @@ fn main() -> Result<()> {
 
   for appid in args.appid {
     potential_feeds.push(Feed {
-      option: FeedOption::AppID,
       text: Some(format!("Steam AppID {appid}")),
       url: appid_to_rss_url(appid),
     });
@@ -94,7 +80,6 @@ fn main() -> Result<()> {
       .and_then(|appid_match| appid_match.as_str().parse::<usize>().ok());
     if let Some(appid) = appid {
       potential_feeds.push(Feed {
-        option: FeedOption::Url,
         text: Some(format!("Steam AppID {appid}")),
         url: appid_to_rss_url(appid),
       });
@@ -106,21 +91,15 @@ fn main() -> Result<()> {
       .with_style(ProgressStyle::with_template("Verifying {pos}/{len} {bar}")?);
 
     for potential_feed in potential_feeds {
-      let potential_feed = if [FeedOption::AppID, FeedOption::Url]
-        .contains(&potential_feed.option)
-      {
-        let response = ureq_agent.get(&potential_feed.url).call()?;
-        sleep(timeout);
-        if response.content_type() == "text/xml" {
-          let body = response.into_string()?;
-          let title_start = body.find("<title>").unwrap() + 7;
-          let title_end = body.find("</title>").unwrap();
-          Feed {
-            text: Some(body[title_start..title_end].to_string()),
-            ..potential_feed
-          }
-        } else {
-          continue;
+      let response = ureq_agent.get(&potential_feed.url).call()?;
+      sleep(timeout);
+      let potential_feed = if response.content_type() == "text/xml" {
+        let body = response.into_string()?;
+        let title_start = body.find("<title>").unwrap() + 7;
+        let title_end = body.find("</title>").unwrap();
+        Feed {
+          text: Some(body[title_start..title_end].to_string()),
+          ..potential_feed
         }
       } else {
         continue;
