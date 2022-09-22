@@ -212,6 +212,11 @@ fn main() -> Result<()> {
     ..Default::default()
   };
 
+  if feeds_to_output.is_empty() {
+    eprintln!("No feeds found.");
+    return Ok(());
+  }
+
   for feed in feeds_to_output {
     if args.opml {
       opml_document
