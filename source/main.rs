@@ -110,6 +110,7 @@ fn main() -> Result<()> {
         .contains(&potential_feed.option)
       {
         let response = ureq_agent.get(&potential_feed.url).call()?;
+        sleep(timeout);
         if response.content_type() == "text/xml" {
           let body = response.into_string()?;
           let title_start = body.find("<title>").unwrap() + 7;
@@ -126,7 +127,6 @@ fn main() -> Result<()> {
       };
 
       feeds_to_output.push(potential_feed);
-      sleep(timeout);
       progress.inc(1);
     }
   } else {
