@@ -169,7 +169,7 @@ fn main() -> Result<()> {
 
   if args.verify {
     let verify_feed = |url: &str| -> Result<_> {
-      let response = ureq_agent.get(&url).call()?;
+      let response = ureq_agent.get(url).call()?;
       sleep(timeout);
       Ok((
         response.content_type() == "text/xml",
