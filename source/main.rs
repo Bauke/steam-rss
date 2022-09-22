@@ -98,6 +98,10 @@ fn main() -> Result<()> {
 
   let store_url_regex =
     Regex::new(r"(?i)^https?://store.steampowered.com/app/(?P<appid>\d+)")?;
+  let user_json_regex = Regex::new(r"var rgGames = (?P<json>\[.+\]);\s+var")?;
+  let user_id_regex = Regex::new(r"(i?)^\w+$")?;
+  let user_url_regex =
+    Regex::new(r"(?i)https?://steamcommunity.com/id/(?P<userid>\w+)")?;
 
   for appid in args.appid {
     potential_feeds.push(Feed {
@@ -121,15 +125,76 @@ fn main() -> Result<()> {
     }
   }
 
+  for user in args.user {
+    let user_url = if user_id_regex.is_match(&user) {
+      userid_to_games_url(user)
+    } else if let Some(user) = user_url_regex
+      .captures(&user)
+      .and_then(|captures| captures.name("userid"))
+    {
+      userid_to_games_url(user.as_str())
+    } else {
+      continue;
+    };
+
+    let body = ureq_agent.get(&user_url).call()?.into_string()?;
+    sleep(timeout);
+
+    let games_json = user_json_regex
+      .captures(&body)
+      .and_then(|captures| captures.name("json"))
+      .map(|json| json.as_str());
+    if let Some(games_json) = games_json {
+      let games = serde_json::from_str::<Vec<SteamApp>>(games_json)?;
+      for game in games {
+        let friendly_url = if game.friendly_url.is_string() {
+          Some(appid_to_rss_url(game.friendly_url.as_str().unwrap()))
+        } else {
+          None
+        };
+
+        potential_feeds.push(Feed {
+          friendly_url,
+          text: Some(game.name),
+          url: appid_to_rss_url(game.appid),
+        });
+      }
+    } else {
+      eprintln!("Couldn't scan games from: {user_url}");
+      eprintln!(
+        "Make sure \"Game Details\" in Privacy Settings is set to Public."
+      );
+      continue;
+    }
+  }
+
   if args.verify {
     let progress = ProgressBar::new(potential_feeds.len().try_into()?)
       .with_style(ProgressStyle::with_template("Verifying {pos}/{len} {bar}")?);
 
-    for potential_feed in potential_feeds {
-      let response = ureq_agent.get(&potential_feed.url).call()?;
+    let verify_feed = |url: &str| -> Result<_> {
+      let response = ureq_agent.get(&url).call()?;
       sleep(timeout);
-      let potential_feed = if response.content_type() == "text/xml" {
-        let body = response.into_string()?;
+      Ok((
+        response.content_type() == "text/xml",
+        response.into_string()?,
+      ))
+    };
+
+    for mut potential_feed in potential_feeds {
+      let (mut is_valid_feed, mut body) = verify_feed(&potential_feed.url)?;
+
+      // If the potential URL doesn't return `text/xml`, try the friendly URL
+      // if one exists.
+      if !is_valid_feed && potential_feed.friendly_url.is_some() {
+        let friendly_url = potential_feed.friendly_url.as_deref().unwrap();
+        (is_valid_feed, body) = verify_feed(friendly_url)?;
+        if is_valid_feed {
+          potential_feed.url = friendly_url.to_string();
+        }
+      }
+
+      let verified_feed = if is_valid_feed {
         let title_start = body.find("<title>").unwrap() + 7;
         let title_end = body.find("</title>").unwrap();
         Feed {
@@ -140,11 +205,11 @@ fn main() -> Result<()> {
         continue;
       };
 
-      feeds_to_output.push(potential_feed);
+      feeds_to_output.push(verified_feed);
       progress.inc(1);
     }
   } else {
-    feeds_to_output = potential_feeds;
+    feeds_to_output.append(&mut potential_feeds);
   }
 
   let mut opml_document = opml::OPML {
@@ -171,4 +236,9 @@ fn main() -> Result<()> {
 /// Creates a Steam RSS URL from a given AppID.
 fn appid_to_rss_url<D: std::fmt::Display>(appid: D) -> String {
   format!("https://steamcommunity.com/games/{appid}/rss/")
+}
+
+/// Creates a user's Steam Games URL from a given User ID.
+fn userid_to_games_url<D: std::fmt::Display>(userid: D) -> String {
+  format!("https://steamcommunity.com/id/{userid}/games/?tab=all")
 }
