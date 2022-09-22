@@ -12,7 +12,6 @@ use std::{thread::sleep, time::Duration};
 use {
   clap::Parser,
   color_eyre::{install, Result},
-  indicatif::{ProgressBar, ProgressStyle},
   regex::Regex,
   serde::Deserialize,
   serde_json::Value,
@@ -169,9 +168,6 @@ fn main() -> Result<()> {
   }
 
   if args.verify {
-    let progress = ProgressBar::new(potential_feeds.len().try_into()?)
-      .with_style(ProgressStyle::with_template("Verifying {pos}/{len} {bar}")?);
-
     let verify_feed = |url: &str| -> Result<_> {
       let response = ureq_agent.get(&url).call()?;
       sleep(timeout);
@@ -206,7 +202,6 @@ fn main() -> Result<()> {
       };
 
       feeds_to_output.push(verified_feed);
-      progress.inc(1);
     }
   } else {
     feeds_to_output.append(&mut potential_feeds);
