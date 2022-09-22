@@ -14,6 +14,8 @@ use {
   color_eyre::{install, Result},
   indicatif::{ProgressBar, ProgressStyle},
   regex::Regex,
+  serde::Deserialize,
+  serde_json::Value,
 };
 
 /// CLI arguments struct using [`clap`]'s Derive API.
@@ -39,16 +41,47 @@ pub struct Args {
   /// A game's store URL, can be used multiple times.
   #[clap(long)]
   pub url: Vec<String>,
+
+  /// A person's steamcommunity.com ID or full URL, can be used multiple times.
+  #[clap(long)]
+  pub user: Vec<String>,
 }
 
 /// A simple feed struct.
 #[derive(Debug)]
 pub struct Feed {
+  /// A potential alternate friendly URL, see [`SteamApp::friendly_url`] for an
+  /// explanation.
+  pub friendly_url: Option<String>,
+
   /// The text to use for the feed in the OPML output.
   pub text: Option<String>,
 
   /// The URL of the feed.
   pub url: String,
+}
+
+/// A small representation of a Steam game that is parsed from JSON.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SteamApp {
+  /// The AppID of the game.
+  pub appid: usize,
+
+  /// The name of the game.
+  pub name: String,
+
+  /// A friendly URL name of the game, some feeds will use this instead of their
+  /// AppID for their RSS feed.
+  ///
+  /// For example, [Portal's feed](https://steamcommunity.com/games/Portal/rss)
+  /// uses `Portal`, instead of
+  /// [its AppID 400](https://steamcommunity.com/games/400/rss).
+  ///
+  /// Some games may also have a friendly URL different from their AppID but
+  /// don't use it for their feed. Steam is weird.
+  #[serde(rename = "friendlyURL")]
+  pub friendly_url: Value,
 }
 
 fn main() -> Result<()> {
@@ -68,6 +101,7 @@ fn main() -> Result<()> {
 
   for appid in args.appid {
     potential_feeds.push(Feed {
+      friendly_url: None,
       text: Some(format!("Steam AppID {appid}")),
       url: appid_to_rss_url(appid),
     });
@@ -80,6 +114,7 @@ fn main() -> Result<()> {
       .and_then(|appid_match| appid_match.as_str().parse::<usize>().ok());
     if let Some(appid) = appid {
       potential_feeds.push(Feed {
+        friendly_url: None,
         text: Some(format!("Steam AppID {appid}")),
         url: appid_to_rss_url(appid),
       });
