@@ -13,8 +13,12 @@ USAGE:
 OPTIONS:
     -a, --appid <APPID>        A game's AppID, can be used multiple times
     -h, --help                 Print help information
+        --opml                 Output the feeds as OPML
     -t, --timeout <TIMEOUT>    The time in milliseconds to sleep between HTTP requests [default:
                                250]
+        --url <URL>            A game's store URL, can be used multiple times
+        --user <USER>          A person's steamcommunity.com ID or full URL, can be used multiple
+                               times
     -v, --verify               Verify potential feeds by downloading them and checking if they
                                return XML
     -V, --version              Print version information
