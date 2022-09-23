@@ -1,4 +1,4 @@
-# Steam ❤️ RSS
+# Steam ❤ RSS
 
 > **Get RSS feeds for Steam games.**
 
