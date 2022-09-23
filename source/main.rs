@@ -16,8 +16,6 @@
 //! # Steam RSS
 //!
 //! > **Get RSS feeds for Steam games.**
-//!
-//! *AGPL-3.0-or-later*
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs, clippy::missing_docs_in_private_items)]
