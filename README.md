@@ -9,7 +9,17 @@
 * Verify potential feeds by checking if they return `text/xml`.
 * Output feeds as an OPML file for easy importing.
 
-## Binaries
+## Installation
+
+### Cargo
+
+With a working [Rust and Cargo](https://www.rust-lang.org/learn/get-started) installation, you can install `steam-rss` from [Crates.io](https://crates.io/crates/steam-rss).
+
+```
+cargo install steam-rss
+```
+
+### Binaries
 
 Precompiled `x86_64-unknown-linux-gnu` binaries are available on the [Releases page](https://git.bauke.xyz/Bauke/steam-rss/releases).
 
