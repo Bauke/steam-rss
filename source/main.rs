@@ -17,9 +17,6 @@
 //!
 //! > **Get RSS feeds for Steam games.**
 
-#![forbid(unsafe_code)]
-#![warn(missing_docs, clippy::missing_docs_in_private_items)]
-
 use std::{thread::sleep, time::Duration};
 
 use {
