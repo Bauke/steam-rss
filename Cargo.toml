@@ -1,7 +1,7 @@
 [package]
 name = "steam-rss"
 description = "Get RSS feeds for Steam games."
-repository = "https://git.bauke.xyz/Bauke/steam-rss"
+repository = "https://github.com/Bauke/steam-rss"
 license = "AGPL-3.0-or-later"
 version = "0.2.2"
 authors = ["Bauke <me@bauke.xyz>"]

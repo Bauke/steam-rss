@@ -19,10 +19,6 @@ With a working [Rust and Cargo](https://www.rust-lang.org/learn/get-started) ins
 cargo install steam-rss
 ```
 
-### Binaries
-
-Precompiled `x86_64-unknown-linux-gnu` binaries are available on the [Releases page](https://git.bauke.xyz/Bauke/steam-rss/releases).
-
 ## Usage
 
 ```
@@ -49,4 +45,4 @@ Found a problem or want to request a new feature? Email [me@bauke.xyz](mailto:me
 
 ## License
 
-Distributed under the [AGPL-3.0-or-later](https://spdx.org/licenses/AGPL-3.0-or-later.html) license, see [LICENSE](https://git.bauke.xyz/Bauke/steam-rss/src/branch/main/LICENSE) for more information.
+Distributed under the [AGPL-3.0-or-later](https://spdx.org/licenses/AGPL-3.0-or-later.html) license, see [LICENSE](https://github.com/Bauke/steam-rss/blob/main/LICENSE) for more information.
